@@ -17,6 +17,7 @@ class Computer(Player):
     def __init__(self):
         Player.__init__(self)
         self.type = 'computer'
+        self.name = 'computer {}'.format(random.randint(1, 6))
 
 class Player(object):
     """ A player object instantiates with a user provided name and score of 0 """
@@ -50,6 +51,37 @@ class Player(object):
     def getType(self):
         return self.type
 
+    class Choice(Object):
+        def __init__(self):
+            self.choice = ''
+        def getChoices(self, pick, type):
+            choice = getChoice(type)
+            return choice(pick)
+
+    def getChoice(type):
+        if type == 'human':
+            return _playerChoice
+        if type == 'computer':
+            return _computerChoice
+
+    def _playerChoice(self):
+        try:
+            playerChoice = raw_input(
+            "Please enter [h] for hold, or [r] for roll: ").strip()
+            if playerChoice.lower() == 'h':
+                return True
+            elif playerChoice.lower() == 'r':
+                return False
+            else:
+                print 'Invalid entry, please enter [h] for hold or [r] for roll'
+                continue
+
+    def _computerChoice(self):
+        if self.pendingPoints >= 25 or self.getActivePlayer().points - 100 < 25:
+            return True
+        else:
+            return False
+
 class Dice(object):
     """ Each dice object is initialized with a random seed of 0"""
     def __init__(self):
@@ -72,7 +104,7 @@ class TimedGameProxy(Game):
     
     def getWinState(self):
         max_score = 0
-        if time.time() = self.end_time:
+        if time.time() == self.end_time:
             return True
         for player in self.gameData:
             if player.getScore() >= 100:
@@ -90,7 +122,6 @@ class Game(object):
     dice is the dice object currently being used
     """
     def __init__(self):
-        self.pendingPoints = 0
         self.activePlayer = 0
         self.turns = 0
         self.dice = Dice()
@@ -106,9 +137,20 @@ class Game(object):
         while True:
             try:
                 choice = raw_input("What type of player will {} be [c] for computer or [p] for person: ").strip()
-                if choice not 'computer' or  'person':
-        self.gameData.append(Player())
-        self.scoreData[self.gameData[index].getName()] = self.gameData[index].getScore()
+                if choice == 'c':
+                    self.gameData.append(PlayerFactory("computer"))
+                    self.scoreData[self.gameData[index].getName()] = self.gameData[index].getScore()
+                    break
+
+                elif choice == 'p':
+                    self.gameData.append(PlayerFactory("player")
+                    self.scoreData[self.gameData[index].getName()] = self.gameData[index].getScore()
+                    break
+
+                else:
+                    print 'Invalid entry, please enter [c] or [p]'
+                    continue
+
 
     def addPlayersToGame(self, players):
         """ Adds a multiple of players to the game """
@@ -156,50 +198,17 @@ class Game(object):
         Depending on the outcome of the roll, the loop will either exit due to
         a player rolling 1 or if the player has over 100 points """
         player.setTurn(True)
+        pendingPoints = 0
+        self.getGameStatus()
         while player.getTurn() and not self.getWinState():
-            self.getGameStatus()
-            self.getPendingPoints()            
-            
-            player.setScore(self.getPendingPoints())
-            self.pendingPoints = 0
-            player.setTurn(False)
-            roll = self.dice.roll()
-            if Choice.getChoices(player.getType()) == True:
-                self.pendingPoints = 0
+            rollorhold = player.Choice().getChoice()
+            if rollorhold:
+                player.setScore(pendingPoints)
                 player.setTurn(False)
             else:
-                self.pendingPoints += roll
+                roll = self.dice.roll()
+                pendingPoints += roll
                 continue
-
-    class Choice(Object):
-        def __init__(self):
-            self.choice = ''
-        def getChoices(self, pick, type):
-            choice = getChoice(type)
-            return choice(pick)
-
-    def getChoice(type):
-        if type == 'human':
-            return _playerChoice
-        if type == 'computer':
-            return _computerChoice
-
-    def _playerChoice(self):
-        playerChoice = raw_input(
-            "Please enter [h] for hold, or [r] for roll: ").strip()
-        if playerChoice.lower() == 'h':
-            return True
-        elif playerChoice.lower() == 'r':
-            return False
-        else:
-            raw_input("Invalid entry, please enter [h] for hold or [r] for roll")
-            continue
-
-    def _computerChoice(self):
-        if self.pendingPoints >= 25 or self.getActivePlayer().points - 100 < 25:
-            return True
-        else:
-            return False
 
     def gameLoop(self, players, player1, player2, timed):
         """
@@ -211,16 +220,17 @@ class Game(object):
             players (optional): Number of players in the game - defaults to 2
             player1 (string): 
         """
-        if players < 2:
+        if players <= 2:
             self.addPlayer(player1)
             self.addPlayer(player2)
-        for player in range(players - 2):
-            self.addPlayer(player)
+        elif players > 2
+            for player in range(2, players):
+                self.addPlayer(player)
 
         while not self.getWinState():
             for player in self.gameData:
                 self.activePlayer = (self.turns % len(self.gameData))
-                self.playerTurn(player)
+                self.getActivePlayer().playerTurn()
                 self.turns += 1
 
         # New win state formula
@@ -229,24 +239,26 @@ class Game(object):
         topScore = max(scores)
         winner = players[scores.index(max(scores))]
         print '\nWe have a winner due to time! {} is the winner with {}'.format(winner, topScore)
-        newGame = raw_input("\nPlay again? [y]|[n]: ")
-        if newGame == 'y':
+        while True:
             try:
-                newGamePlayers = int(raw_input("\nEnter number of players in this game: "))
-            except ValueError:
-                print 'Invalid Input, running game with default of 2 players'
-            else:
-                self.resetGame()
-                self.gameLoop(newGamePlayers)
-            finally:
-                self.resetGame()
-                self.gameLoop()
-        elif newGame == 'n':
-            print 'Thanks for playing! Goodbye!'
-            sys.exit()
-        else:
-            print 'Invalid entry, exiting...'
-            sys.exit()
+                newGame = raw_input("\nPlay again? [y]|[n]: ")
+                if newGame == 'y':
+                try:
+                    newGamePlayers = int(raw_input("\nEnter number of players in this game: "))
+                except ValueError:
+                    print 'Invalid Input, running game with default of 2 players'
+                else:
+                    self.resetGame()
+                    self.gameLoop(newGamePlayers)
+                finally:
+                    self.resetGame()
+                    self.gameLoop()
+                elif newGame == 'n':
+                    print 'Thanks for playing! Goodbye!'
+                    sys.exit()
+                else:
+                    print 'Invalid entry'
+                    continue
 
     def resetGame(self):
         """ Re-initializes game variables for a fresh start """
