@@ -304,9 +304,9 @@ def main():
     parser.add_argument('--num_players',
                         help='Number of players in our game',
                         type=int, required=False, default=2)
-    parser.add_argument('--player1', type=str,
+    parser.add_argument('--player1', type=str.lower,
                         choices=['human', 'computer'], default='human', required=True)
-    parser.add_argument('--player2', type=str,
+    parser.add_argument('--player2', type=str.lower,
                         choices=['human', 'computer'], default='computer', required=True)
     parser.add_argument('--timed', help='Determine if the game is timed',
                         choices=['yes', 'no'], required=True, default='no', type=str.lower)
