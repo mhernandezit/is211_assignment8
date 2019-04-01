@@ -309,11 +309,11 @@ def main():
     parser.add_argument('--player2', type=str,
                         choices=['human', 'computer'], default='computer', required=True)
     parser.add_argument('--timed', help='Determine if the game is timed',
-                        required=True, default=True)
+                        choices=['yes', 'no'], required=True, default='no')
     args = parser.parse_args()
-    if args.timed:
+    if args.timed.lower() == "yes":
         new_game = TimedGameProxy()
-    elif not args.timed:
+    elif args.timed.lower() == "no":
         new_game = Game()
     new_game.game_loop(args.player1, args.player2, args.num_players)
     new_game.restart_game(args.player1, args.player2, args.num_players)
