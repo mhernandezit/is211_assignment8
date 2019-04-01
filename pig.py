@@ -12,59 +12,65 @@ class Player(object):
         self.turn = False
         self.name = 'player'
         self.type = 'human'
-        self.pendingPoints = 0
+        self.pending_points = 0
 
-    def getScore(self):
+    def get_score(self):
         """ Getter to grab the score variable """
         return self.score
 
-    def setScore(self, points):
+    def set_score(self, points):
         """ Score setter method """
         self.score += points
 
-    def getName(self):
+    def get_name(self):
         """ Name getter """
         return self.name
 
-    def setName(self):
+    def set_name(self):
+        """ Name setter for humans - should ask player for their name """
         while True:
             try:
-                newName = raw_input('Enter player name: ').strip()
-                self.name = newName
+                new_name = raw_input('Enter player name: ').strip()
+                self.name = new_name
             except ValueError:
-                print('please enter a string')
+                print 'please enter a string'
                 continue
 
-    def setTurn(self, turn):
+    def set_turn(self, turn):
         """ Turn setter """
         self.turn = turn
 
-    def getTurn(self):
+    def get_turn(self):
         """ Turn getter """
         return self.turn
 
-    def getType(self):
+    def get_type(self):
+        """ Return Player type - this will be a human type """
         return self.type
 
-    def setPendingPoints(self, points):
-        self.pendingPoints += points
-    
-    def resetPendingPoints(self):
-        self.pendingPoints = 0
+    def set_pending_points(self, points):
+        """ Pending points setter """
+        self.pending_points += points
 
-    def getPendingPoints(self):
-        return self.pendingPoints
+    def reset_pending_points(self):
+        """ On turn we need to set pending points to 0 """
+        self.pending_points = 0
 
-    def getChoice(self):
+    def get_pending_points(self):
+        """ Return active player's pending points """
+        return self.pending_points
+
+    def get_choice(self):
+        """ Human's choice function, returns true if hold, false if roll """
         while True:
             try:
-                playerChoice = raw_input("Please enter [h] for hold, or [r] for roll: ").strip()
-                if playerChoice.lower() == 'h':
+                player_choice = raw_input("Please enter [h] for hold, or [r] for roll: ").strip()
+                if player_choice.lower() == 'h':
                     return True
-                elif playerChoice.lower() == 'r':
+                elif player_choice.lower() == 'r':
                     return False
-            except:
-                print('Invalid entry, please enter [h] for hold or [r] for roll')
+            except ValueError:
+                print 'Invalid entry, please enter [h] for hold or [r] for roll'
 
 class Computer(Player):
     """ Computer players have the player type of computer """
@@ -73,23 +79,18 @@ class Computer(Player):
         self.type = 'computer'
         self.name = 'computer {}'.format(random.randint(1, 6))
 
-    def getChoice(self):
-        print self.getPendingPoints() >= 25
-        print (int(self.getScore()) - 100) >= 25
-        if int(self.getPendingPoints()) >= 25 or (int(self.getScore()) - 100) >= 25:
-            return True
-        else:
-            return False
-    
+    def get_choice(self):
+        return int(self.get_pending_points()) >= 25 or (int(self.get_score()) - 100) >= 25
 
 
 class PlayerFactory(object):
     """ Player Factory class - allows us to build players of computer or human types"""
-    def playerType(self, type):
-        if type == 'human':
+    def player_type(self, ptype):
+        """ Two types of players, human or computer """
+        if ptype == 'human':
             return Player()
-        elif type == 'computer':
-            return Computer()                
+        elif ptype == 'computer':
+            return Computer()
 
 class Dice(object):
     """ Each dice object is initialized with a random seed of 0"""
@@ -101,103 +102,97 @@ class Dice(object):
         self.value = random.randint(1, 6)
         return self.value
 
-    def getCurrentRoll(self):
+    def get_roll(self):
         """ Getter method to grab the value variable """
         return self.value
 
 class Game(object):
     """ The Game object holds the bulk of the work for the Pig game
-    gameData holds the player objects
-    pendingPoints show how many points are in the bucket to be consumed
-    activePlayer is the player name that is currently rolling
+    game_data holds the player objects
+    pending_points show how many points are in the bucket to be consumed
+    active_player is the player name that is currently rolling
     winner boolean determines if there is a winner of the game
     roll is the current roll
     dice is the dice object currently being used
     """
     def __init__(self):
-        self.activePlayer = 0
+        self.active_player = 0
         self.turns = 0
         self.dice = Dice()
-        self.scoreData = {}
-        self.gameData = []
+        self.score_data = {}
+        self.game_data = []
 
-    def addPlayer(self, ptype=str, index=int):
-        """ Adds a new player to the gameData list, also updates the scoreData dictionary"""
-        pf = PlayerFactory()
+    def add_player(self, ptype=str, index=int):
+        """ Adds a new player to the game_data list, also updates the score_data dictionary"""
+        player_factory = PlayerFactory()
         if ptype == 'computer':
-            self.gameData.append(pf.playerType("computer"))
-            print index
-            print self.gameData
-            print self.gameData[index]
-            self.scoreData[self.gameData[index].getName()] = self.gameData[index].getScore()
+            self.game_data.append(player_factory.player_type("computer"))
+            self.score_data[self.game_data[index].get_name()] = self.game_data[index].get_score()
         elif ptype == 'human':
-            self.gameData.append(pf.playerType("human"))
-            print index
-            print self.gameData
-            print self.gameData[index]
-            self.scoreData[self.gameData[index].getName()] = self.gameData[index].getScore()
+            self.game_data.append(player_factory.player_type("human"))
+            self.score_data[self.game_data[index].get_name()] = self.game_data[index].get_score()
 
 
-    def addPlayersToGame(self, players):
+    def add_players_to_game(self, players):
         """ Adds a multiple of players to the game """
         for player in range(players):
-            self.addPlayer(player)
+            self.add_player(player)
 
-    def getActivePlayer(self):
+    def get_active_player(self):
         """ Getter method to pull player objects """
-        return self.gameData[self.activePlayer]
+        return self.game_data[self.active_player]
 
-    def getWinState(self):
+    def get_win_state(self):
         """
         Checks player scores in the active player objects, if any of the scores are
         above 100, it returns True.
         Otherwise the function returns False.
         The Truth/False values directly correlate to the while statements which run the
-        gameLoop
+        game_loop
         """
-        for player in self.gameData:
-            if player.getScore() >= 100:
+        for player in self.game_data:
+            if player.get_score() >= 100:
                 return True
         return False
 
-    def getGameStatus(self):
+    def get_game_status(self):
         """ Print functions - builds the game board, prints current status"""
         os.system('cls')
-        print('====   Pig Game   ====\n')
+        print '====   Pig Game   ====\n'
         print('{:15} : {:>6}\n').format('Player', 'Score')
-        for player in self.gameData:
-            print('{:15} : {:6} \n').format(player.getName(), player.getScore())
-        print('{} is rolling').format(self.getActivePlayer().getName())
-        if self.dice.getCurrentRoll() == 1:
-            print('The last roll was {}, next player\'s turn!').format(self.dice.getCurrentRoll())
+        for player in self.game_data:
+            print('{:15} : {:6} \n').format(player.get_name(), player.get_score())
+        print('{} is rolling').format(self.get_active_player().get_name())
+        if self.dice.get_roll() == 1:
+            print('The last roll was {}, next player\'s turn!').format(self.dice.get_roll())
         else:
-            print('The last roll was {}').format(self.dice.getCurrentRoll())
-        print('Pending Points: {:>10}').format(self.getActivePlayer().getPendingPoints())
+            print('The last roll was {}').format(self.dice.get_roll())
+        print('Pending Points: {:>10}').format(self.get_active_player().get_pending_points())
 
-    def playerTurn(self):
+    def player_turn(self):
         """ Interactive player turn, asks for user input about whether they want
         to roll or hold.
         Depending on the outcome of the roll, the loop will either exit due to
         a player rolling 1 or if the player has over 100 points """
-        rolling = self.getActivePlayer()
-        rolling.setTurn(True)
-        self.getGameStatus()
-        while rolling.getTurn() and not self.getWinState():
-            rollorhold = rolling.getChoice()
+        rolling = self.get_active_player()
+        rolling.set_turn(True)
+        self.get_game_status()
+        while rolling.get_turn() and not self.get_win_state():
+            rollorhold = rolling.get_choice()
             if rollorhold:
-                rolling.setScore(rolling.getPendingPoints())
-                rolling.resetPendingPoints()
-                rolling.setTurn(False)
+                rolling.set_score(rolling.get_pending_points())
+                rolling.reset_pending_points()
+                rolling.set_turn(False)
             else:
                 roll = self.dice.roll()
                 if roll == 1:
-                    rolling.resetPendingPoints()
-                    rolling.setTurn(False)
-                rolling.setPendingPoints(roll)
-                self.getGameStatus()
+                    rolling.reset_pending_points()
+                    rolling.set_turn(False)
+                rolling.set_pending_points(roll)
+                self.get_game_status()
                 continue
 
-    def gameLoop(self, player1, player2, numPlayers=2):
+    def game_loop(self, player1, player2, num_players=2):
         """
         The game loop sets up the players in the game, and builds out a turn
         order for the players.  Once the win state is reached, the function allows for
@@ -205,72 +200,74 @@ class Game(object):
 
         Args:
             players (optional): Number of players in the game - defaults to 2
-            player1 (string): 
+            player1 (string):
         """
-        if numPlayers <= 2:
+        if num_players <= 2:
             print 'in first if'
-            print numPlayers
-            self.addPlayer(player1, 0)
-            self.addPlayer(player2, 1)
-            print self.gameData
-        elif numPlayers > 2:
-            for player in range(2, numPlayers):
-                self.addPlayersToGame(player)
+            print num_players
+            self.add_player(player1, 0)
+            self.add_player(player2, 1)
+            print self.game_data
+        elif num_players > 2:
+            for player in range(2, num_players):
+                self.add_players_to_game(player)
 
-        while not self.getWinState():
-            for player in self.gameData:
+        while not self.get_win_state():
+            for player in self.game_data:
                 print 'in for loop'
-                self.activePlayer = (self.turns % len(self.gameData))
-                self.playerTurn()
-                print self.getActivePlayer().getName()
+                self.active_player = (self.turns % len(self.game_data))
+                self.player_turn()
+                print self.get_active_player().get_name()
                 self.turns += 1
 
         # New win state formula
-        scores=list(self.scoreData.values())
-        players=list(self.scoreData.keys())
-        topScore = max(scores)
+        scores = list(self.score_data.values())
+        players = list(self.score_data.keys())
+        top_score = max(scores)
         winner = players[scores.index(max(scores))]
-        print('\nWe have a winner! {} is the winner with {}').format(winner, topScore)
+        print('\nWe have a winner! {} is the winner with {}').format(winner, top_score)
         while True:
             try:
-                newGame = raw_input("\nPlay again? [y]|[n]: ")
-                if newGame == 'y':
+                new_game = raw_input("\nPlay again? [y]|[n]: ").strip()
+                if new_game == 'y':
                     try:
-                        newGamePlayers = int(raw_input("\nEnter number of players in this game: "))
-                        self.resetGame()
-                        self.gameLoop(newGamePlayers,'human', 'computer')
+                        new_game_players = int(raw_input("Enter number of players in this game: "))
+                        self.reset_game()
+                        self.game_loop(new_game_players, 'human', 'computer')
                     except ValueError:
-                        print('Invalid Input, running game with default of 2 players')
+                        print 'Invalid Input, running game with default of 2 players'
                         continue
                     finally:
-                        self.resetGame()
-                        self.gameLoop(2,'human', 'computer')
-                elif newGame == 'n':
-                    print('Thanks for playing! Goodbye!')
+                        self.reset_game()
+                        self.game_loop(2, 'human', 'computer')
+                elif new_game == 'n':
+                    print 'Thanks for playing! Goodbye!'
                     sys.exit()
-            finally:
-                print('Invalid entry')
+            except ValueError:
+                continue
 
-    def resetGame(self):
+    def reset_game(self):
         """ Re-initializes game variables for a fresh start """
-        self.activePlayer = 0
+        self.active_player = 0
         self.turns = 0
         self.dice = Dice()
-        self.scoreData = {}
-        self.gameData = []
+        self.score_data = {}
+        self.game_data = []
 
 
 class TimedGameProxy(Game):
+    """ A Game class that has a time limit """
     def __init__(self):
         Game.__init__(self)
         self.start_time = time.time()
         self.end_time = time.time() + 60
-    
-    def getWinState(self):
+
+    def get_win_state(self):
+        """ updated win state function which checks time in addtion to score """
         if time.time() == self.end_time:
             return True
-        for player in self.gameData:
-            if player.getScore() >= 100:
+        for player in self.game_data:
+            if player.get_score() >= 100:
                 return True
         return False
 
@@ -280,18 +277,21 @@ def main():
 
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--numPlayers',
+    parser.add_argument('--num_players',
                         help='Number of players in our game',
                         type=int, required=False, default=2)
-    parser.add_argument('--player1', type=str, choices=['human','computer'], default='computer', required=False)
-    parser.add_argument('--player2', type=str, choices=['human','computer'], default='computer', required=False)
-    parser.add_argument('--timed', help='Determine if the game is timed', required=False, default=False)
+    parser.add_argument('--player1', type=str,
+                        choices=['human', 'computer'], default='computer', required=False)
+    parser.add_argument('--player2', type=str,
+                        choices=['human', 'computer'], default='computer', required=False)
+    parser.add_argument('--timed', help='Determine if the game is timed',
+                        required=False, default=False)
     args = parser.parse_args()
-    if args.timed == True:
-        newGame = TimedGameProxy()
-    elif args.timed == False:
-        newGame = Game()
-    newGame.gameLoop(args.player1, args.player2, args.numPlayers)
+    if args.timed:
+        new_game = TimedGameProxy()
+    elif not args.timed:
+        new_game = Game()
+    new_game.game_loop(args.player1, args.player2, args.num_players)
 
 if __name__ == '__main__':
     main()
