@@ -214,13 +214,10 @@ class Game(object):
 
         while not self.get_win_state():
             for player in self.game_data:
-                print 'in for loop'
                 self.active_player = (self.turns % len(self.game_data))
                 self.player_turn()
-                print self.get_active_player().get_name()
                 self.turns += 1
 
-        # New win state formula
         for player in self.game_data:
             self.score_data[player.get_name()] = player.get_score()
         scores = list(self.score_data.values())
