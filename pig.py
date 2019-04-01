@@ -10,7 +10,7 @@ class Player(object):
     def __init__(self):
         self.score = 0
         self.turn = False
-        self.name = 'player'
+        self.set_name()
         self.type = 'human'
         self.pending_points = 0
 
@@ -32,6 +32,7 @@ class Player(object):
             try:
                 new_name = raw_input('Enter player name: ').strip()
                 self.name = new_name
+                break
             except ValueError:
                 print 'please enter a string'
                 continue
@@ -77,10 +78,12 @@ class Computer(Player):
     def __init__(self):
         Player.__init__(self)
         self.type = 'computer'
-        self.name = 'computer {}'.format(random.randint(1, 6))
 
     def get_choice(self):
         return int(self.get_pending_points()) >= 25 or (int(self.get_score()) - 100) >= 25
+
+    def set_name(self):
+        self.name = 'computer {}'.format(random.randint(1, 30))
 
 
 class PlayerFactory(object):
@@ -203,11 +206,8 @@ class Game(object):
             player1 (string):
         """
         if num_players <= 2:
-            print 'in first if'
-            print num_players
             self.add_player(player1, 0)
             self.add_player(player2, 1)
-            print self.game_data
         elif num_players > 2:
             for player in range(2, num_players):
                 self.add_players_to_game(player)
@@ -221,30 +221,14 @@ class Game(object):
                 self.turns += 1
 
         # New win state formula
+        for player in self.game_data:
+            self.score_data[player.get_name()] = player.get_score()
         scores = list(self.score_data.values())
         players = list(self.score_data.keys())
         top_score = max(scores)
         winner = players[scores.index(max(scores))]
         print('\nWe have a winner! {} is the winner with {}').format(winner, top_score)
-        while True:
-            try:
-                new_game = raw_input("\nPlay again? [y]|[n]: ").strip()
-                if new_game == 'y':
-                    try:
-                        new_game_players = int(raw_input("Enter number of players in this game: "))
-                        self.reset_game()
-                        self.game_loop(new_game_players, 'human', 'computer')
-                    except ValueError:
-                        print 'Invalid Input, running game with default of 2 players'
-                        continue
-                    finally:
-                        self.reset_game()
-                        self.game_loop(2, 'human', 'computer')
-                elif new_game == 'n':
-                    print 'Thanks for playing! Goodbye!'
-                    sys.exit()
-            except ValueError:
-                continue
+        self.reset_game()
 
     def reset_game(self):
         """ Re-initializes game variables for a fresh start """
@@ -253,6 +237,21 @@ class Game(object):
         self.dice = Dice()
         self.score_data = {}
         self.game_data = []
+
+
+    def restart_game(self, player1, player2, num_players):
+        """ Restart function - either builds a new game_loop or exits the game
+        Depends on user input """
+        while True:
+            try:
+                new_game = raw_input("\nPlay again? [y]|[n]: ").strip()
+                if new_game == 'y':
+                    self.game_loop(player1, player2, num_players)
+                elif new_game == 'n':
+                    print 'Thanks for playing! Goodbye!'
+                    sys.exit()
+            except ValueError:
+                continue
 
 
 class TimedGameProxy(Game):
@@ -264,13 +263,41 @@ class TimedGameProxy(Game):
 
     def get_win_state(self):
         """ updated win state function which checks time in addtion to score """
-        if time.time() == self.end_time:
+        if time.time() >= self.end_time:
             return True
         for player in self.game_data:
             if player.get_score() >= 100:
                 return True
         return False
 
+    def get_time_remaining(self):
+        """ Returns the time remaining """
+        return self.end_time - time.time()
+
+    def get_game_status(self):
+        """ Print functions - builds the game board, prints current status"""
+        os.system('cls')
+        print '====   Pig Game   ====\n'
+        print('{:15} : {:>6}\n').format('Player', 'Score')
+        for player in self.game_data:
+            print('{:15} : {:6} \n').format(player.get_name(), player.get_score())
+        print('{} is rolling').format(self.get_active_player().get_name())
+        if self.dice.get_roll() == 1:
+            print('The last roll was {}, next player\'s turn!').format(self.dice.get_roll())
+        else:
+            print('The last roll was {}').format(self.dice.get_roll())
+        print('Pending Points: {:>10}').format(self.get_active_player().get_pending_points())
+        print('Time Remaining: {} seconds').format(round(self.get_time_remaining()))
+
+    def reset_game(self):
+        """ Re-initializes game variables for a fresh start """
+        self.active_player = 0
+        self.turns = 0
+        self.dice = Dice()
+        self.score_data = {}
+        self.game_data = []
+        self.start_time = time.time()
+        self.end_time = time.time() + 60
 
 def main():
     """ Main method to run our game
@@ -281,17 +308,19 @@ def main():
                         help='Number of players in our game',
                         type=int, required=False, default=2)
     parser.add_argument('--player1', type=str,
-                        choices=['human', 'computer'], default='computer', required=False)
+                        choices=['human', 'computer'], default='human', required=True)
     parser.add_argument('--player2', type=str,
-                        choices=['human', 'computer'], default='computer', required=False)
+                        choices=['human', 'computer'], default='computer', required=True)
     parser.add_argument('--timed', help='Determine if the game is timed',
-                        required=False, default=False)
+                        required=True, default=True)
     args = parser.parse_args()
     if args.timed:
         new_game = TimedGameProxy()
     elif not args.timed:
         new_game = Game()
     new_game.game_loop(args.player1, args.player2, args.num_players)
+    new_game.restart_game(args.player1, args.player2, args.num_players)
+
 
 if __name__ == '__main__':
     main()
