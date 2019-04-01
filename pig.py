@@ -70,8 +70,10 @@ class Player(object):
                     return True
                 elif player_choice.lower() == 'r':
                     return False
+                else:
+                    print 'Invalid entry, please enter [h] for hold or [r] for roll'
             except ValueError:
-                print 'Invalid entry, please enter [h] for hold or [r] for roll'
+                print 'Entry must be of string data type'
 
 class Computer(Player):
     """ Computer players have the player type of computer """
